@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import toast from 'react-hot-toast';
 
 export const CartContext = createContext(null);
 
@@ -26,12 +27,15 @@ export function CartProvider({ children }) {
       localStorage.setItem('cart', JSON.stringify(updated));
       return updated;
     });
+    toast.success(`${product.title} added to cart`, { icon: '🛒' });
   }
 
   function removeItem(productId) {
     setItems((prev) => {
+      const item = prev.find((i) => i.id === productId);
       const updated = prev.filter((i) => i.id !== productId);
       localStorage.setItem('cart', JSON.stringify(updated));
+      if (item) toast.error(`${item.title} removed from cart`, { icon: '🗑️' });
       return updated;
     });
   }
