@@ -1,67 +1,34 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { colors } from '../styles/theme';
-
-function getProductImage(product) {
-  const img = product.images && product.images[0];
-  if (img && img.startsWith('http') && !img.includes('placehold')) return img;
-  return product.category?.image || 'https://i.imgur.com/BG8J0Fj.jpg';
-}
+import { FiStar } from 'react-icons/fi';
 
 class ProductCard extends React.Component {
-  state = { hovered: false };
-
   render() {
     const { product } = this.props;
-    const { hovered } = this.state;
+    const imgSrc = product.thumbnail || (product.images && product.images[0]) || '';
 
     return (
-      <article
-        style={{
-          background: colors.card,
-          border: `1px solid ${colors.border}`,
-          borderRadius: '12px',
-          overflow: 'hidden',
-          boxShadow: hovered ? '0 8px 24px rgba(0,0,0,0.12)' : '0 2px 8px rgba(0,0,0,0.06)',
-          transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
-          transition: 'all 0.25s ease',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-        onMouseEnter={() => this.setState({ hovered: true })}
-        onMouseLeave={() => this.setState({ hovered: false })}
-      >
+      <article className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 flex flex-col">
         <Link
           to={`/product/${product.id}/details`}
-          style={{ textDecoration: 'none', color: 'inherit', flex: 1, display: 'flex', flexDirection: 'column' }}
+          className="no-underline text-inherit flex flex-col flex-1"
           aria-label={`View details for ${product.title}`}
         >
           <img
-            src={getProductImage(product)}
+            src={imgSrc}
             alt={product.title}
-            style={{ width: '100%', height: '200px', objectFit: 'cover', background: '#f1f5f9' }}
+            className="w-full h-48 object-cover bg-slate-100"
           />
-          <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                color: colors.text,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }}
-            >
+          <div className="p-3 flex flex-col gap-1 flex-1">
+            <h2 className="text-sm font-semibold text-slate-800 line-clamp-2 m-0">
               {product.title}
             </h2>
-            <p style={{ margin: 0, fontSize: '0.8rem', color: colors.muted }}>
-              {product.category?.name}
-            </p>
-            <p style={{ margin: '4px 0 0', fontSize: '1.1rem', fontWeight: 700, color: colors.primary }}>
-              ₹{product.price}
-            </p>
+            <p className="text-xs text-slate-400 capitalize m-0">{product.category}</p>
+            <div className="flex items-center gap-1 text-xs text-amber-500 mt-0.5">
+              <FiStar size={12} />
+              <span>{product.rating}</span>
+            </div>
+            <p className="text-base font-bold text-blue-600 mt-1 m-0">₹{product.price}</p>
           </div>
         </Link>
       </article>

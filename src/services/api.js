@@ -1,16 +1,19 @@
 import axios from 'axios';
 
-const client = axios.create({
-  baseURL: 'https://api.escuelajs.co/api/v1',
-});
+const BASE = 'https://dummyjson.com';
 
-export function getProducts({ categoryId, offset = 0, limit = 20 } = {}) {
-  const params = { offset, limit };
-  if (categoryId) params.categoryId = categoryId;
-  return client.get('/products', { params }).then((res) => res.data);
+export function getProducts({ category, sortBy, order, skip = 0, limit = 30 } = {}) {
+  const params = { limit, skip };
+  if (sortBy) params.sortBy = sortBy;
+  if (order) params.order = order;
+  const url = category ? `${BASE}/products/category/${category}` : `${BASE}/products`;
+  return axios.get(url, { params }).then((res) => res.data.products);
 }
 
 export function getProductById(id) {
-  return client.get(`/products/${id}`).then((res) => res.data);
+  return axios.get(`${BASE}/products/${id}`).then((res) => res.data);
 }
 
+export function getCategories() {
+  return axios.get(`${BASE}/products/categories`).then((res) => res.data);
+}

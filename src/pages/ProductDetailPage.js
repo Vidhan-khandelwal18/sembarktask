@@ -1,17 +1,16 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { FiArrowLeft, FiShoppingCart, FiStar, FiTag } from 'react-icons/fi';
 import { getProductById } from '../services/api';
-import { CartContext } from '../context/CartContext';
-import { colors } from '../styles/theme';
+import { useCart } from '../context/CartContext';
 
-// Functional wrapper — useQuery lives here
 function ProductDetailPage(props) {
   const { id } = props.match.params;
-
   const { data: product, isLoading, isError } = useQuery({
     queryKey: ['product', id],
     queryFn: () => getProductById(id),
   });
+  const cart = useCart();
 
   return (
     <ProductDetailView
@@ -19,13 +18,12 @@ function ProductDetailPage(props) {
       loading={isLoading}
       error={isError}
       history={props.history}
+      cart={cart}
     />
   );
 }
 
 class ProductDetailView extends React.Component {
-  static contextType = CartContext;
-
   state = { added: false, imgIndex: 0, visible: false };
 
   componentDidMount() {
@@ -33,30 +31,19 @@ class ProductDetailView extends React.Component {
   }
 
   handleAddToCart = () => {
-    const cart = this.context;
-    cart.addItem(this.props.product);
+    this.props.cart.addItem(this.props.product);
     this.setState({ added: true });
     setTimeout(() => this.setState({ added: false }), 2000);
   };
 
-  getImgSrc() {
-    const { product } = this.props;
-    const { imgIndex } = this.state;
-    if (!product) return '';
-    const imgs = product.images || [];
-    const img = imgs[imgIndex];
-    if (img && img.startsWith('http') && !img.includes('placehold')) return img;
-    return product.category?.image || 'https://i.imgur.com/BG8J0Fj.jpg';
-  }
-
   render() {
     const { product, loading, error, history } = this.props;
-    const { added, visible } = this.state;
+    const { added, imgIndex, visible } = this.state;
 
     if (loading) {
       return (
-        <div style={{ textAlign: 'center', padding: '80px', color: colors.muted }}>
-          <span style={{ fontSize: '2rem' }}>⏳</span>
+        <div className="text-center py-24 text-slate-400">
+          <div className="text-4xl mb-3">⏳</div>
           <p>Loading product...</p>
         </div>
       );
@@ -64,123 +51,82 @@ class ProductDetailView extends React.Component {
 
     if (error || !product) {
       return (
-        <div style={{ textAlign: 'center', padding: '80px', color: colors.danger }}>
+        <div className="text-center py-24 text-red-500">
           <p>Product not found.</p>
-          <button onClick={() => history.push('/')} style={backBtnStyle}>
+          <button onClick={() => history.push('/')} className="mt-4 px-4 py-2 border rounded-lg text-slate-600 hover:bg-slate-100">
             ← Back to Home
           </button>
         </div>
       );
     }
 
-    const productImages = (product.images || []).filter(
-      (img) => img && img.startsWith('http') && !img.includes('placehold')
-    );
+    const images = product.images || [];
+    const mainImg = images[imgIndex] || product.thumbnail || '';
 
     return (
       <main
-        style={{
-          maxWidth: '960px',
-          margin: '0 auto',
-          padding: '32px 16px',
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(20px)',
-          transition: 'opacity 0.4s ease, transform 0.4s ease',
-        }}
+        className={`max-w-4xl mx-auto px-4 py-8 transition-all duration-500 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
       >
-        <button onClick={() => history.goBack()} style={backBtnStyle} aria-label="Go back">
-          ← Back
+        <button
+          onClick={() => history.goBack()}
+          className="flex items-center gap-1 text-sm text-slate-600 border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-100 transition mb-6"
+          aria-label="Go back"
+        >
+          <FiArrowLeft /> Back
         </button>
 
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '32px',
-            marginTop: '24px',
-            background: colors.card,
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-          }}
-        >
-          {/* Image section */}
-          <div style={{ flex: '1 1 300px' }}>
+        <div className="bg-white rounded-2xl shadow-md p-6 flex flex-wrap gap-8">
+          {/* Images */}
+          <div className="flex-1 min-w-[260px]">
             <img
-              src={this.getImgSrc()}
+              src={mainImg}
               alt={product.title}
-              style={{
-                width: '100%',
-                borderRadius: '12px',
-                objectFit: 'cover',
-                maxHeight: '380px',
-                background: '#f1f5f9',
-              }}
+              className="w-full rounded-xl object-cover max-h-80 bg-slate-100"
             />
-            {productImages.length > 1 && (
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                {productImages.map((img, i) => (
+            {images.length > 1 && (
+              <div className="flex gap-2 mt-3 flex-wrap">
+                {images.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => this.setState({ imgIndex: i })}
-                    style={{
-                      border: `2px solid ${this.state.imgIndex === i ? colors.primary : colors.border}`,
-                      borderRadius: '8px',
-                      padding: 0,
-                      cursor: 'pointer',
-                      overflow: 'hidden',
-                      background: 'none',
-                    }}
+                    className={`rounded-lg overflow-hidden border-2 transition ${imgIndex === i ? 'border-blue-500' : 'border-slate-200'}`}
                     aria-label={`View image ${i + 1}`}
                   >
-                    <img
-                      src={img}
-                      alt={`${product.title} ${i + 1}`}
-                      style={{ width: '60px', height: '60px', objectFit: 'cover', display: 'block' }}
-                    />
+                    <img src={img} alt={`${product.title} ${i + 1}`} className="w-14 h-14 object-cover" />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Info section */}
-          <div style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Info */}
+          <div className="flex-1 min-w-[240px] flex flex-col gap-4">
             <div>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: colors.muted }}>
-                {product.category?.name}
+              <p className="text-xs text-slate-400 capitalize flex items-center gap-1">
+                <FiTag size={11} /> {product.category}
               </p>
-              <h1 style={{ margin: '4px 0 0', fontSize: '1.5rem', color: colors.text }}>
-                {product.title}
-              </h1>
+              <h1 className="text-2xl font-bold text-slate-800 mt-1">{product.title}</h1>
+              {product.brand && <p className="text-sm text-slate-500 mt-0.5">by {product.brand}</p>}
             </div>
 
-            <p style={{ fontSize: '2rem', fontWeight: 700, color: colors.primary, margin: 0 }}>
-              ₹{product.price}
-            </p>
+            <div className="flex items-center gap-2">
+              <FiStar className="text-amber-400" />
+              <span className="text-sm font-medium text-slate-700">{product.rating}</span>
+              <span className="text-xs text-slate-400">({product.stock} in stock)</span>
+            </div>
 
-            <p style={{ color: colors.muted, lineHeight: 1.6, margin: 0 }}>
-              {product.description}
-            </p>
+            <p className="text-3xl font-bold text-blue-600">₹{product.price}</p>
+
+            <p className="text-slate-500 text-sm leading-relaxed">{product.description}</p>
 
             <button
               onClick={this.handleAddToCart}
-              style={{
-                padding: '14px 28px',
-                background: added ? '#16a34a' : colors.primary,
-                color: '#fff',
-                border: 'none',
-                borderRadius: '10px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'background 0.3s, transform 0.15s',
-                transform: added ? 'scale(0.97)' : 'scale(1)',
-                marginTop: 'auto',
-              }}
+              className={`flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-semibold text-base transition-all ${added ? 'bg-green-500 scale-95' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               aria-label="Add to cart"
             >
-              {added ? '✓ Added to Cart' : '🛒 Add to My Cart'}
+              <FiShoppingCart />
+              {added ? '✓ Added to Cart' : 'Add to My Cart'}
             </button>
           </div>
         </div>
@@ -188,16 +134,5 @@ class ProductDetailView extends React.Component {
     );
   }
 }
-
-const backBtnStyle = {
-  background: 'none',
-  border: `1px solid ${colors.border}`,
-  borderRadius: '8px',
-  padding: '8px 16px',
-  cursor: 'pointer',
-  fontSize: '0.9rem',
-  color: colors.text,
-  transition: 'background 0.2s',
-};
 
 export default ProductDetailPage;

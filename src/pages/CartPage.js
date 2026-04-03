@@ -1,239 +1,127 @@
-import React from 'react';
-import { observer } from 'mobx-react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { CartContext } from '../context/CartContext';
-import { colors } from '../styles/theme';
+import { FiTrash2, FiPlus, FiMinus, FiShoppingBag } from 'react-icons/fi';
+import { useCart } from '../context/CartContext';
 
-function toRupees(price) {
-  return `₹${price}`;
-}
+function CartPage() {
+  const { items, removeItem, updateQuantity, totalItems, totalValue } = useCart();
+  const [visible, setVisible] = useState(false);
 
-class CartPage extends React.Component {
-  static contextType = CartContext;
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 50);
+    return () => clearTimeout(t);
+  }, []);
 
-  state = { visible: false };
+  return (
+    <main
+      className={`max-w-3xl mx-auto px-4 py-8 min-h-[70vh] transition-all duration-500 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}
+    >
+      <h1 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+        <FiShoppingBag /> Your Cart
+      </h1>
 
-  componentDidMount() {
-    setTimeout(() => this.setState({ visible: true }), 50);
-  }
+      {items.length === 0 ? (
+        <div className="text-center py-20 text-slate-400">
+          <FiShoppingBag size={48} className="mx-auto mb-4 opacity-30" />
+          <p className="text-lg">Your cart is empty.</p>
+          <Link
+            to="/"
+            className="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold no-underline hover:bg-blue-700 transition"
+          >
+            Browse Products
+          </Link>
+        </div>
+      ) : (
+        <>
+          <ul className="flex flex-col gap-4 list-none p-0 m-0">
+            {items.map((item) => (
+              <CartItem
+                key={item.id}
+                item={item}
+                onRemove={() => removeItem(item.id)}
+                onIncrease={() => updateQuantity(item.id, 1)}
+                onDecrease={() => updateQuantity(item.id, -1)}
+              />
+            ))}
+          </ul>
 
-  render() {
-    const cart = this.context;
-    const { visible } = this.state;
-
-    return (
-      <main
-        style={{
-          maxWidth: '800px',
-          margin: '0 auto',
-          padding: '32px 16px',
-          minHeight: '70vh',
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(20px)',
-          transition: 'opacity 0.4s ease, transform 0.4s ease',
-        }}
-      >
-        <h1 style={{ fontSize: '1.6rem', color: colors.text, marginBottom: '24px' }}>
-          🛒 Your Cart
-        </h1>
-
-        {cart.items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: colors.muted }}>
-            <p style={{ fontSize: '1.1rem' }}>Your cart is empty.</p>
-            <Link
-              to="/"
-              style={{
-                display: 'inline-block',
-                marginTop: '16px',
-                padding: '10px 24px',
-                background: colors.primary,
-                color: '#fff',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontWeight: 600,
-              }}
-            >
-              Browse Products
-            </Link>
-          </div>
-        ) : (
-          <>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {cart.items.map((item) => (
-                <CartItem
-                  key={item.id}
-                  item={item}
-                  onRemove={() => cart.removeItem(item.id)}
-                  onIncrease={() => cart.updateQuantity(item.id, 1)}
-                  onDecrease={() => cart.updateQuantity(item.id, -1)}
-                />
-              ))}
-            </ul>
-
-            <div
-              style={{
-                marginTop: '32px',
-                padding: '20px',
-                background: colors.card,
-                borderRadius: '12px',
-                border: `1px solid ${colors.border}`,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '12px',
-              }}
-            >
-              <div>
-                <p style={{ margin: 0, color: colors.muted, fontSize: '0.9rem' }}>
-                  {cart.totalItems} item{cart.totalItems !== 1 ? 's' : ''}
-                </p>
-                <p style={{ margin: '4px 0 0', fontSize: '1.4rem', fontWeight: 700, color: colors.text }}>
-                  Total: <span style={{ color: colors.primary }}>{toRupees(cart.totalValue)}</span>
-                </p>
-              </div>
-              <button
-                style={{
-                  padding: '12px 28px',
-                  background: colors.primary,
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '10px',
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-                onClick={() => alert('Checkout coming soon!')}
-              >
-                Checkout
-              </button>
+          <div className="mt-8 bg-white rounded-xl border border-slate-200 p-5 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-slate-400">{totalItems} item{totalItems !== 1 ? 's' : ''}</p>
+              <p className="text-2xl font-bold text-slate-800 mt-1">
+                Total: <span className="text-blue-600">₹{totalValue.toFixed(2)}</span>
+              </p>
             </div>
-          </>
-        )}
-      </main>
-    );
-  }
+            <button
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition"
+              onClick={() => alert('Checkout coming soon!')}
+            >
+              Checkout
+            </button>
+          </div>
+        </>
+      )}
+    </main>
+  );
 }
 
-class CartItem extends React.Component {
-  state = { removing: false };
+function CartItem({ item, onRemove, onIncrease, onDecrease }) {
+  const [removing, setRemoving] = useState(false);
+  const imgSrc = item.thumbnail || (item.images && item.images[0]) || '';
 
-  handleRemove = () => {
-    this.setState({ removing: true });
-    setTimeout(() => this.props.onRemove(), 300);
+  const handleRemove = () => {
+    setRemoving(true);
+    setTimeout(onRemove, 300);
   };
 
-  render() {
-    const { item, onIncrease, onDecrease } = this.props;
-    const { removing } = this.state;
-    const imgSrc =
-      item.images && item.images[0] && item.images[0].startsWith('http') && !item.images[0].includes('placehold')
-        ? item.images[0]
-        : (item.category?.image || 'https://i.imgur.com/BG8J0Fj.jpg');
+  return (
+    <li
+      className={`flex gap-4 bg-white rounded-xl border border-slate-200 p-4 items-center flex-wrap transition-all duration-300 ${removing ? 'opacity-0 translate-x-8' : 'opacity-100 translate-x-0'
+        }`}
+    >
+      <img src={imgSrc} alt={item.title} className="w-20 h-20 object-cover rounded-lg flex-shrink-0" />
 
-    return (
-      <li
-        style={{
-          display: 'flex',
-          gap: '16px',
-          background: colors.card,
-          borderRadius: '12px',
-          border: `1px solid ${colors.border}`,
-          padding: '16px',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          opacity: removing ? 0 : 1,
-          transform: removing ? 'translateX(40px)' : 'translateX(0)',
-          transition: 'opacity 0.3s ease, transform 0.3s ease',
-        }}
-      >
-        <img
-          src={imgSrc}
-          alt={item.title}
-          style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }}
-        />
-
-        <div style={{ flex: 1, minWidth: '140px' }}>
-          <Link
-            to={`/product/${item.id}/details`}
-            style={{ textDecoration: 'none', color: colors.text, fontWeight: 600, fontSize: '0.95rem' }}
-          >
-            {item.title}
-          </Link>
-          <p style={{ margin: '4px 0 0', color: colors.muted, fontSize: '0.85rem' }}>
-            {toRupees(item.price)} each
-          </p>
-          <p style={{ margin: '2px 0 0', fontWeight: 700, color: colors.primary, fontSize: '0.9rem' }}>
-            Subtotal: {toRupees(item.price * item.quantity)}
-          </p>
-        </div>
-
-        {/* Quantity controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <button
-            onClick={onDecrease}
-            style={qtyBtnStyle}
-            aria-label="Decrease quantity"
-          >
-            −
-          </button>
-          <span
-            style={{
-              minWidth: '28px',
-              textAlign: 'center',
-              fontWeight: 700,
-              fontSize: '1rem',
-              color: colors.text,
-            }}
-          >
-            {item.quantity}
-          </span>
-          <button
-            onClick={onIncrease}
-            style={qtyBtnStyle}
-            aria-label="Increase quantity"
-          >
-            +
-          </button>
-        </div>
-
-        <button
-          onClick={this.handleRemove}
-          style={{
-            background: 'none',
-            border: `1px solid ${colors.danger}`,
-            color: colors.danger,
-            borderRadius: '8px',
-            padding: '6px 12px',
-            cursor: 'pointer',
-            fontSize: '0.85rem',
-            flexShrink: 0,
-            transition: 'background 0.2s, color 0.2s',
-          }}
-          aria-label={`Remove ${item.title} from cart`}
-          onMouseEnter={(e) => { e.currentTarget.style.background = colors.danger; e.currentTarget.style.color = '#fff'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = colors.danger; }}
+      <div className="flex-1 min-w-[140px]">
+        <Link
+          to={`/product/${item.id}/details`}
+          className="font-semibold text-slate-800 text-sm no-underline hover:text-blue-600"
         >
-          Remove
+          {item.title}
+        </Link>
+        <p className="text-xs text-slate-400 mt-1">₹{item.price} each</p>
+        <p className="text-sm font-bold text-blue-600 mt-0.5">
+          Subtotal: ₹{(item.price * item.quantity).toFixed(2)}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <button
+          onClick={onDecrease}
+          className="w-8 h-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center transition"
+          aria-label="Decrease quantity"
+        >
+          <FiMinus size={14} />
         </button>
-      </li>
-    );
-  }
+        <span className="w-7 text-center font-bold text-slate-800">{item.quantity}</span>
+        <button
+          onClick={onIncrease}
+          className="w-8 h-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center transition"
+          aria-label="Increase quantity"
+        >
+          <FiPlus size={14} />
+        </button>
+      </div>
+
+      <button
+        onClick={handleRemove}
+        className="flex items-center gap-1 text-sm text-red-500 border border-red-300 px-3 py-1.5 rounded-lg hover:bg-red-500 hover:text-white transition flex-shrink-0"
+        aria-label={`Remove ${item.title} from cart`}
+      >
+        <FiTrash2 size={14} /> Remove
+      </button>
+    </li>
+  );
 }
 
-const qtyBtnStyle = {
-  width: '32px',
-  height: '32px',
-  borderRadius: '8px',
-  border: `1px solid ${colors.border}`,
-  background: '#f8fafc',
-  cursor: 'pointer',
-  fontSize: '1.1rem',
-  fontWeight: 700,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'background 0.15s',
-};
-
-export default observer(CartPage);
+export default CartPage;

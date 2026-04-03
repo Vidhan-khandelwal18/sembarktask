@@ -16,16 +16,9 @@ class App extends React.Component {
       <QueryClientProvider client={queryClient}>
         <CartProvider>
           <Router>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: '100vh',
-                fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-              }}
-            >
+            <div className="flex flex-col min-h-screen font-sans">
               <Navbar />
-              <div style={{ flex: 1 }}>
+              <div className="flex-1">
                 <Switch>
                   <Route exact path="/" render={(props) => <HomePage {...props} />} />
                   <Route path="/product/:id/details" render={(props) => <ProductDetailPage {...props} />} />
