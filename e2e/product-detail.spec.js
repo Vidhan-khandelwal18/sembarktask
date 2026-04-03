@@ -1,4 +1,3 @@
-
 const { test, expect } = require('@playwright/test');
 
 test.describe('Product Detail Page', () => {
