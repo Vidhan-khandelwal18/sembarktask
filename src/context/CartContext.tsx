@@ -1,10 +1,20 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import toast from 'react-hot-toast';
+import { Product, CartItem } from '../types';
 
-export const CartContext = createContext(null);
+interface CartContextType {
+  items: CartItem[];
+  addItem: (product: Product) => void;
+  removeItem: (productId: number) => void;
+  updateQuantity: (productId: number, delta: number) => void;
+  totalItems: number;
+  totalValue: number;
+}
 
-export function CartProvider({ children }) {
-  const [items, setItems] = useState(() => {
+const CartContext = createContext<CartContextType | null>(null);
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem('cart');
       return saved ? JSON.parse(saved) : [];
@@ -13,12 +23,7 @@ export function CartProvider({ children }) {
     }
   });
 
-  function save(updated) {
-    setItems(updated);
-    localStorage.setItem('cart', JSON.stringify(updated));
-  }
-
-  function addItem(product) {
+  function addItem(product: Product) {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === product.id);
       const updated = existing
@@ -30,7 +35,7 @@ export function CartProvider({ children }) {
     toast.success(`${product.title} added to cart`, { icon: '🛒' });
   }
 
-  function removeItem(productId) {
+  function removeItem(productId: number) {
     setItems((prev) => {
       const item = prev.find((i) => i.id === productId);
       const updated = prev.filter((i) => i.id !== productId);
@@ -40,7 +45,7 @@ export function CartProvider({ children }) {
     });
   }
 
-  function updateQuantity(productId, delta) {
+  function updateQuantity(productId: number, delta: number) {
     setItems((prev) => {
       const updated = prev
         .map((i) => i.id === productId ? { ...i, quantity: i.quantity + delta } : i)
@@ -60,6 +65,8 @@ export function CartProvider({ children }) {
   );
 }
 
-export function useCart() {
-  return useContext(CartContext);
+export function useCart(): CartContextType {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error('useCart must be used within CartProvider');
+  return ctx;
 }
